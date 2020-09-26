@@ -180,7 +180,7 @@ foreach ( $cli_options['library'] as $library ) {
 			$photo_date_created = MAC_TIMESTAMP_EPOCH + $row['ZDATECREATED'];
 
 			// If there's a date in the EXIF data, use that.
-			$exif = exif_read_data( $photo_path, "EXIF" );
+			$exif = @exif_read_data( $photo_path, "EXIF" );
 			
 			if ( $exif && isset( $exif['DateTimeOriginal'] ) ) {
 				$localPhotoTimestamp = strtotime( $exif['DateTimeOriginal'] );
