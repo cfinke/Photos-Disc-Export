@@ -148,8 +148,6 @@ $json_faces = array();
 
 $folders = array();
 
-$photo_idx = 1;
-
 $timezone = new \DateTimeZone( $cli_options['timezone'] );
 $time_right_now = new \DateTime( 'now', $timezone );
 $timezone_offset = $timezone->getOffset( $time_right_now );
