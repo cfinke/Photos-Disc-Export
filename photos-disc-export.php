@@ -177,25 +177,20 @@ foreach ( $cli_options['library'] as $library ) {
 		$photo_idx = count( $json_photos ) + 1;
 
 		if ( file_exists( $photo_path ) ) {
-			$photo_date_created = $row['ZDATECREATED'];
+			$photo_date_created = MAC_TIMESTAMP_EPOCH + $row['ZDATECREATED'];
 
-
-			// @todo Check the EXIF date.
-			/*
-			$exif = $photo->getEXIF();
+			// If there's a date in the EXIF data, use that.
+			$exif = exif_read_data( $photo_path, "EXIF" );
 			
-			if ( isset( $exif['DateTimeOriginal'] ) ) {
+			if ( $exif && isset( $exif['DateTimeOriginal'] ) ) {
 				$localPhotoTimestamp = strtotime( $exif['DateTimeOriginal'] );
 				
 				if ( false !== $localPhotoTimestamp && $localPhotoTimestamp <= time() ) {
-					return $localPhotoTimestamp;
+					$photo_date_created = $localPhotoTimestamp;
 				}
 			}
 
-			return (int) $photo->getDateTimeGMT()->getTimestamp() + $timezone_offset;
-			*/
-
-			$datetime = new DateTime( '@' . ( MAC_TIMESTAMP_EPOCH + intval( $row['ZDATECREATED'] ) ) );
+			$datetime = new DateTime( '@' . ( intval( $photo_date_created ) ) );
 			$timestamp = $datetime->getTimestamp();
 
 			if ( $cli_options['start_date'] && date( "Y-m-d", $timestamp ) < $cli_options['start_date'] ) {
