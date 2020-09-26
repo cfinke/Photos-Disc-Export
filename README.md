@@ -29,9 +29,7 @@ You may specify multiple `--library` arguments to export photos from multiple li
 
 The Website
 ===========
-The resulting website groups photos into their events and supports searching on photo title, description, date, and faces. Everything is ordered by date ascending. (Feel free to add sorting options and send me a patch.)
-
-Note: It currently ignores actual albums and events and just groups photos from the same day into an event.
+The resulting website groups photos by the date on which they were taken and supports searching by date and the names of people in the photos. Everything is ordered by date ascending. (Feel free to add sorting options and send me a patch.)
 
 Here's how the main page of the website looks:
 
