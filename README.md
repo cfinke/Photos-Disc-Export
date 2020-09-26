@@ -14,6 +14,8 @@ Run it like this:
 
 `$ ./photos-disc-export.php --library=/path/to/photo/library --output-dir=/path/for/exported/files [--jpegrescan --start-date=1950-01-01]`
 
+You may need to `chmod +x photos-disc-export.php` first.
+
 Optional arguments:
 
 * `--jpegrescan`: will invoke `jpegrescan` to optimize the size of the export photos. (Obviously, you must have (`jpegrescan`)[https://github.com/kud/jpegrescan] installed.) This will take a long time.
