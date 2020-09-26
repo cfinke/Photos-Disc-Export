@@ -224,41 +224,60 @@ foreach ( $cli_options['library'] as $library ) {
 
 		$idx = count( $json_events[ $event_key ]['photos'] );
 
-		// '0' here should be the total count of photos that will be in this event.
+		// 3 here should be strlen( number of photos in this event )
 		$photo_filename = $photo_date . ' - ' . str_pad( $idx, 3, '0', STR_PAD_LEFT );
-
-		// @todo Figure out what the title of the photo is in Photos.
-		// $title = trim( $photo->getCaption() );
-		//
-		//		if ( $title ) {
-		//			$photo_filename .= " - " . str_replace( "/", "-", $title );
-		//		}
-
+		
 		$title = '';
 
-		// @todo Find faces.
-		$face_names = array();
+		// @todo Figure out what the title/caption/description of the photo is in Photos.
 		/*
-				$photo_faces = $photo->getFaces();
-
-				foreach ( $photo_faces as $face ) {
-					if ( $name = $face->getName() ) {
-						if ( ! in_array( $name, $face_names ) ) {
-							$face_names[] = $name;
-
-							if ( ! isset( $json_faces[ $name ] ) ) {
-								$json_faces[ $name ] = array( 'photos' => array() );
-								$json_faces[ $name ]['face_key'] = $face->getKey();
-							}
-
-							$json_faces[ $name ]['photos'][$photo_idx] = $face->getCoordinates();
-						}
-					}
-					else {
-						file_put_contents('php://stderr', "Couldn't find face #" . $face->getKey() . " for photo " . $photo->getCaption() . " (" . $photo->getDateTimeGMT()->format( "F j, Y" ) . ")\n" );
-					}
-				}
+		if ( $title ) {
+			$photo_filename .= " - " . str_replace( "/", "-", $title );
+		}
 		*/
+
+		// Find faces.
+		$face_names = array();
+
+		$faces_in_this_photo_statement = $db->prepare( "SELECT * FROM ZDETECTEDFACE WHERE ZASSET=:photo_id" );
+		$faces_in_this_photo_statement->bindValue( ':photo_id', $row['Z_PK'] );
+		$faces_in_this_photo = $faces_in_this_photo_statement->execute();
+
+		while ( $face_row = $faces_in_this_photo->fetchArray( SQLITE3_ASSOC ) ) {
+			$name_statement = $db->prepare( "SELECT * FROM ZPERSON WHERE Z_PK=:person_id" );
+			$name_statement->bindValue( ':person_id', $face_row['ZPERSON'] );
+			$name_result = $name_statement->execute();
+
+			$name = '';
+
+			while ( $name_row = $name_result->fetchArray( SQLITE3_ASSOC ) ) {
+				$name = $name_row['ZFULLNAME'];
+			}
+
+			$name_statement->close();
+
+			if ( $name ) {
+				$face_names[] = $name;
+
+				if ( ! isset( $json_faces[ $name ] ) ) {
+					$json_faces[ $name ] = array( 'photos' => array() );
+				}
+
+				/*
+				 * There's only a single ZSIZE entry, so I'm probably not calculating the face box size correctly, but it works well enough.
+				 */
+				$face_width = $face_row['ZSIZE'];
+				$face_height = $face_row['ZSIZE'];
+				$face_lower_left_x = $face_row['ZCENTERX'] - ( $face_width / 2 );
+				$face_lower_left_y = $face_row['ZCENTERY'] - ( $face_height / 2 );
+
+				$json_faces[ $name ]['photos'][ $photo_idx ] = array( $face_lower_left_x, $face_lower_left_y, $face_width, $face_height );
+			}
+		}
+
+		$faces_in_this_photo_statement->close();
+
+		$face_names = array_unique( $face_names );
 
 		$tmp = explode( ".", $photo_path );
 		$photo_extension = array_pop( $tmp );
@@ -363,4 +382,3 @@ function sort_photos( $a, $b ) {
 // @todo
 // ZGENERICALBUM has albums
 // ZKEYWORD has keywords
-// ZPERSON has people
