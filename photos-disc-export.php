@@ -7,6 +7,9 @@ error_reporting( E_ALL );
 // gmmktime( 0, 0, 0, 1, 1, 2001 ) = 978307200
 define( 'MAC_TIMESTAMP_EPOCH', 978307200 );
 
+/*
+ * Parse the command line options, set reasonable defaults, and validate them.
+ */
 $cli_options = getopt( "l::o::js:e:ut:", array( 'library::', 'output-dir::', 'jpegrescan', 'start_date:', 'end_date:', 'update_site', 'timezone:' ) );
 
 if ( isset( $cli_options['l'] ) ) {
@@ -72,6 +75,9 @@ if ( empty( $cli_options['library'] ) || empty( $cli_options['output-dir'] ) ) {
 	die;
 }
 
+/*
+ * Allow ~ to be used in the path options.
+ */
 $cli_options['output-dir'] = preg_replace( '/^~/', $_SERVER['HOME'], $cli_options['output-dir'] );
 
 if ( ! is_array( $cli_options['library'] ) ) {
@@ -110,12 +116,14 @@ else {
 	die;
 }
 
+/*
+ * Begin exporting.
+ */
+
 echo "Copying website structure...\n";
 
-$photos_disc_export_dir = rtrim( __DIR__, '/' ) . '/';
-
 // Copy over the HTML/JS/CSS for the website.
-shell_exec( "cp -r " . $photos_disc_export_dir . "site/* " . escapeshellarg( $cli_options['output-dir'] ) );
+shell_exec( "cp -r " . rtrim( __DIR__, '/' ) . '/' . "site/* " . escapeshellarg( $cli_options['output-dir'] ) );
 
 if ( $cli_options['update_site'] ) {
 	// The program was run just to copy over the site structure, probably by me while developing.
