@@ -29,6 +29,8 @@ The Website
 ===========
 The resulting website groups photos into their events and supports searching on photo title, description, date, and faces. Everything is ordered by date ascending. (Feel free to add sorting options and send me a patch.)
 
+Note: It currently ignores actual albums and events and just groups photos from the same day into an event.
+
 Here's how the main page of the website looks:
 
 ![All images laid out in a grid](screenshots/all.png)
