@@ -60,6 +60,13 @@ if ( ! isset( $cli_options['timezone'] ) ) {
 	$cli_options['timezone'] = 'America/Los_Angeles';
 }
 
+try {
+	new DateTimeZone( $cli_options['timezone'] );
+} catch ( Exception $e ) {
+	file_put_contents('php://stderr', "Invalid timezone identifier: " . $cli_options['timezone'] . "\n" );
+	die;
+}
+
 if ( empty( $cli_options['library'] ) || empty( $cli_options['output-dir'] ) ) {
 	file_put_contents('php://stderr', "Usage: ./photos-disc-export.php --library=/path/to/photo/library --output-dir=/path/for/exported/files [--jpegrescan --start_date=1950-01-01 --end_date=1955-01-01]\n" );
 	die;
