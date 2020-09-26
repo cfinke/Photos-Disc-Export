@@ -308,10 +308,10 @@ function add_photo( $db_entry, $db, $library ){
 
 	$utcPhotoTimestamp = $timestamp - $timezone_offset; // Mac OS expects this to be in UTC
 
-	$event_folder = get_export_folder_name( $event_key, $event_key );
+	$event_folder = $cli_options['output-dir'] . $event_key . "/";
 	$folders[] = $event_folder;
 
-	$thumb_folder = get_export_thumb_folder_name( $event_folder );
+	$thumb_folder = $cli_options['output-dir'] . str_replace( $cli_options['output-dir'], "thumbnails/", $event_folder );
 
 	if ( ! is_dir( $event_folder ) ) {
 		mkdir( $event_folder );
@@ -378,40 +378,6 @@ function sort_photos( $a, $b ) {
 	}
 
 	return 0;
-}
-
-function get_export_folder_name( $date, $title ) {
-	global $cli_options;
-	global $folders;
-
-	$title = str_replace( "/", "-", $title );
-	
-	$folder_basis = $date;
-	
-	if ( ! empty( $title ) ) {
-		$folder_basis .= " - " . $title;
-	}
-	
-	$folder_basis = preg_replace( '/[^a-zA-Z0-9 \(\)\.,\-]/', '', $folder_basis );
-	
-	if ( ! in_array( $cli_options['output-dir'] . $folder_basis . "/", $folders ) ) {
-		return $cli_options['output-dir'] . $folder_basis . "/";
-	}
-	else {
-		$suffix = 2;
-		
-		while ( in_array( $cli_options['output-dir'] . $folder_basis . " - " . str_pad( $suffix, 2, "0", STR_PAD_LEFT ) . "/", $folders ) ) {
-			$suffix++;
-		}
-		
-		return $cli_options['output-dir'] . $folder_basis . " - " . str_pad( $suffix, 2, "0", STR_PAD_LEFT ) . "/";
-	}
-}
-
-function get_export_thumb_folder_name( $event_folder ) {
-	global $cli_options;
-	
-	return $cli_options['output-dir'] . str_replace( $cli_options['output-dir'], "thumbnails/", $event_folder );
 }
 
 // @todo
