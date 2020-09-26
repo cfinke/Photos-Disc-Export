@@ -152,8 +152,6 @@ $timezone = new \DateTimeZone( $cli_options['timezone'] );
 $time_right_now = new \DateTime( 'now', $timezone );
 $timezone_offset = $timezone->getOffset( $time_right_now );
 
-$all_photos = array();
-
 foreach ( $cli_options['library'] as $library ) {
 	echo "Processing " . $library . "...\n";
 
@@ -205,6 +203,8 @@ function add_photo( $db_entry, $db, $library ){
 
 	$photo_path = $library . "originals/" . $subdirectory . "/" . $filename;
 
+	$photo_idx = count( $json_photos ) + 1;
+
 	if ( file_exists( $photo_path ) ) {
 		$photo_date_created = $db_entry['ZDATECREATED'];
 
@@ -235,12 +235,11 @@ function add_photo( $db_entry, $db, $library ){
 			return;
 		}
 
-		echo "Found photo " . $photo_path . " (" . date( "Y-m-d", $timestamp ) . ")\n";
-
-		$all_photos[] = array( 'path' => $photo_path, 'timestamp' => $timestamp, 'photos' => date( "Y-m-d", $timestamp ) );
+		echo "Found photo #" . $photo_idx . ": " . $photo_path . " (" . date( "Y-m-d", $timestamp ) . ")\n";
 	}
 	else {
-		echo "\tCouldn't find photo " . $photo_path . "\n";
+		file_put_contents( 'php://stderr', "Couldn't find photo " . $photo_path . " in library\n" );
+		return;
 	}
 
 	$event_key = date( "Y-m-d", $timestamp );
@@ -256,8 +255,6 @@ function add_photo( $db_entry, $db, $library ){
 	}
 
 	$photo_date = date( "Y-m-d H-i-s", $timestamp );
-
-	$photo_idx = count( $json_photos ) + 1;
 
 	$idx = count( $json_events[ $event_key ]['photos'] );
 
