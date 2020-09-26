@@ -167,9 +167,159 @@ foreach ( $cli_options['library'] as $library ) {
 	$photos = $db->query( "SELECT * FROM ZGENERICASSET" );
 
 	while ( $row = $photos->fetchArray( SQLITE3_ASSOC ) ) {
-		add_photo( $row, $db, $library );
-
 		// @todo What does ZADJUSTMENTTIMESTAMP do?
+
+		$subdirectory = $row['ZDIRECTORY'];
+		$filename = $row['ZFILENAME'];
+
+		$photo_path = $library . "originals/" . $subdirectory . "/" . $filename;
+
+		$photo_idx = count( $json_photos ) + 1;
+
+		if ( file_exists( $photo_path ) ) {
+			$photo_date_created = $row['ZDATECREATED'];
+
+
+			// @todo Check the EXIF date.
+			/*
+			$exif = $photo->getEXIF();
+			
+			if ( isset( $exif['DateTimeOriginal'] ) ) {
+				$localPhotoTimestamp = strtotime( $exif['DateTimeOriginal'] );
+				
+				if ( false !== $localPhotoTimestamp && $localPhotoTimestamp <= time() ) {
+					return $localPhotoTimestamp;
+				}
+			}
+
+			return (int) $photo->getDateTimeGMT()->getTimestamp() + $timezone_offset;
+			*/
+
+			$datetime = new DateTime( '@' . ( MAC_TIMESTAMP_EPOCH + intval( $row['ZDATECREATED'] ) ) );
+			$timestamp = $datetime->getTimestamp();
+
+			if ( $cli_options['start_date'] && date( "Y-m-d", $timestamp ) < $cli_options['start_date'] ) {
+				continue;
+			}
+
+			if ( $cli_options['end_date'] && date( "Y-m-d", $timestamp ) > $cli_options['end_date'] ) {
+				continue;
+			}
+
+			echo "Found photo #" . $photo_idx . ": " . $photo_path . " (" . date( "Y-m-d", $timestamp ) . ")\n";
+		}
+		else {
+			file_put_contents( 'php://stderr', "Couldn't find photo " . $photo_path . " in library\n" );
+			continue;
+		}
+
+		$event_key = date( "Y-m-d", $timestamp );
+
+		if ( ! isset( $json_events[ $event_key ] ) ) {
+			$json_events[ $event_key ] = array(
+				'id' => $event_key,
+				'title' => $event_key,
+				'date' => $event_key,
+				'dateFriendly' => date( "F j, Y", $timestamp ),
+				'photos' => array()
+			);
+		}
+
+		$photo_date = date( "Y-m-d H-i-s", $timestamp );
+
+		$idx = count( $json_events[ $event_key ]['photos'] );
+
+		// '0' here should be the total count of photos that will be in this event.
+		$photo_filename = $photo_date . ' - ' . str_pad( $idx, 3, '0', STR_PAD_LEFT );
+
+		// @todo Figure out what the title of the photo is in Photos.
+		// $title = trim( $photo->getCaption() );
+		//
+		//		if ( $title ) {
+		//			$photo_filename .= " - " . str_replace( "/", "-", $title );
+		//		}
+
+		$title = '';
+
+		// @todo Find faces.
+		$face_names = array();
+		/*
+				$photo_faces = $photo->getFaces();
+
+				foreach ( $photo_faces as $face ) {
+					if ( $name = $face->getName() ) {
+						if ( ! in_array( $name, $face_names ) ) {
+							$face_names[] = $name;
+
+							if ( ! isset( $json_faces[ $name ] ) ) {
+								$json_faces[ $name ] = array( 'photos' => array() );
+								$json_faces[ $name ]['face_key'] = $face->getKey();
+							}
+
+							$json_faces[ $name ]['photos'][$photo_idx] = $face->getCoordinates();
+						}
+					}
+					else {
+						file_put_contents('php://stderr', "Couldn't find face #" . $face->getKey() . " for photo " . $photo->getCaption() . " (" . $photo->getDateTimeGMT()->format( "F j, Y" ) . ")\n" );
+					}
+				}
+		*/
+
+		$tmp = explode( ".", $photo_path );
+		$photo_extension = array_pop( $tmp );
+
+		$photo_filename = preg_replace( '/[^a-zA-Z0-9 \(\)\.,\-]/', '', $photo_filename );
+
+		$photo_filename .= "." . $photo_extension;
+
+		$utcPhotoTimestamp = $timestamp - $timezone_offset; // Mac OS expects this to be in UTC
+
+		$event_folder = $cli_options['output-dir'] . $event_key . "/";
+		$folders[] = $event_folder;
+
+		$thumb_folder = $cli_options['output-dir'] . str_replace( $cli_options['output-dir'], "thumbnails/", $event_folder );
+
+		if ( ! is_dir( $event_folder ) ) {
+			mkdir( $event_folder );
+		}
+
+		if ( ! is_dir( $thumb_folder ) ) {
+			mkdir( $thumb_folder );
+		}
+
+		if ( ! file_exists( $event_folder . $photo_filename ) ) {
+			copy( $photo_path, $event_folder . $photo_filename );
+
+			if ( isset( $cli_options['jpegrescan'] ) ) {
+				shell_exec( "jpegrescan " . escapeshellarg( $event_folder . $photo_filename ) . " " . escapeshellarg( $event_folder . $photo_filename ) . " > /dev/null 2>&1" );
+			}
+
+			shell_exec( "touch -mt " . escapeshellarg( date( "YmdHi.s", $utcPhotoTimestamp ) ) . " " . escapeshellarg( $event_folder . $photo_filename ) . " > /dev/null 2>&1" );
+		}
+
+		if ( ! file_exists( $thumb_folder . "thumb_" . $photo_filename ) ) {
+			shell_exec( "sips -Z 300 " . escapeshellarg( $event_folder . $photo_filename ) . " --out " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " 2> /dev/null" );
+
+			if ( isset( $cli_options['jpegrescan'] ) ) {
+				shell_exec( "jpegrescan " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " > /dev/null 2>&1"  );
+			}
+
+			shell_exec( "touch -mt " . escapeshellarg( date( "YmdHi.s", $utcPhotoTimestamp ) ) . " " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " > /dev/null 2>&1" );
+		}
+
+		$json_photos[ $photo_idx ] = array(
+			'id' => $photo_idx,
+			'path' => str_replace( $cli_options['output-dir'], '', $event_folder . $photo_filename ),
+			'thumb_path' => str_replace( $cli_options['output-dir'], '', $thumb_folder . "thumb_" . $photo_filename ),
+			'event_id' => $event_key,
+			'title' => $title,
+			'description' => $title/* . "\n\n" . trim( $photo->getDescription() )*/,
+			'faces' => $face_names,
+			'date' => date( "Y-m-d", $timestamp ),
+			'dateFriendly' => date( "F j, Y g:i A", $timestamp )
+		);
+
+		$json_events[ $event_key ]['photos'][] = $photo_idx;
 	}
 
 	$db->close();
@@ -190,166 +340,6 @@ file_put_contents( $original_export_path . "/inc/data.js", "};\n\n", FILE_APPEND
 file_put_contents( $original_export_path . "/inc/data.js", "var faces = {", FILE_APPEND );
 write_json_object_without_using_so_much_memory( $original_export_path . "/inc/data.js", $json_faces );
 file_put_contents( $original_export_path . "/inc/data.js", "};\n\n", FILE_APPEND );
-
-function add_photo( $db_entry, $db, $library ){
-	global $json_events;
-	global $json_photos;
-	global $json_faces;
-	global $timezone_offset;
-	global $cli_options;
-
-	$subdirectory = $db_entry['ZDIRECTORY'];
-	$filename = $db_entry['ZFILENAME'];
-
-	$photo_path = $library . "originals/" . $subdirectory . "/" . $filename;
-
-	$photo_idx = count( $json_photos ) + 1;
-
-	if ( file_exists( $photo_path ) ) {
-		$photo_date_created = $db_entry['ZDATECREATED'];
-
-
-		// @todo Check the EXIF date.
-		/*
-		$exif = $photo->getEXIF();
-		
-		if ( isset( $exif['DateTimeOriginal'] ) ) {
-			$localPhotoTimestamp = strtotime( $exif['DateTimeOriginal'] );
-			
-			if ( false !== $localPhotoTimestamp && $localPhotoTimestamp <= time() ) {
-				return $localPhotoTimestamp;
-			}
-		}
-
-		return (int) $photo->getDateTimeGMT()->getTimestamp() + $timezone_offset;
-		*/
-
-		$datetime = new DateTime( '@' . ( MAC_TIMESTAMP_EPOCH + intval( $db_entry['ZDATECREATED'] ) ) );
-		$timestamp = $datetime->getTimestamp();
-
-		if ( $cli_options['start_date'] && date( "Y-m-d", $timestamp ) < $cli_options['start_date'] ) {
-			return;
-		}
-
-		if ( $cli_options['end_date'] && date( "Y-m-d", $timestamp ) > $cli_options['end_date'] ) {
-			return;
-		}
-
-		echo "Found photo #" . $photo_idx . ": " . $photo_path . " (" . date( "Y-m-d", $timestamp ) . ")\n";
-	}
-	else {
-		file_put_contents( 'php://stderr', "Couldn't find photo " . $photo_path . " in library\n" );
-		return;
-	}
-
-	$event_key = date( "Y-m-d", $timestamp );
-
-	if ( ! isset( $json_events[ $event_key ] ) ) {
-		$json_events[ $event_key ] = array(
-			'id' => $event_key,
-			'title' => $event_key,
-			'date' => $event_key,
-			'dateFriendly' => date( "F j, Y", $timestamp ),
-			'photos' => array()
-		);
-	}
-
-	$photo_date = date( "Y-m-d H-i-s", $timestamp );
-
-	$idx = count( $json_events[ $event_key ]['photos'] );
-
-	// '0' here should be the total count of photos that will be in this event.
-	$photo_filename = $photo_date . ' - ' . str_pad( $idx, 3, '0', STR_PAD_LEFT );
-
-	// @todo Figure out what the title of the photo is in Photos.
-	// $title = trim( $photo->getCaption() );
-	//
-	//		if ( $title ) {
-	//			$photo_filename .= " - " . str_replace( "/", "-", $title );
-	//		}
-
-	$title = '';
-
-	// @todo Find faces.
-	$face_names = array();
-	/*
-			$photo_faces = $photo->getFaces();
-
-			foreach ( $photo_faces as $face ) {
-				if ( $name = $face->getName() ) {
-					if ( ! in_array( $name, $face_names ) ) {
-						$face_names[] = $name;
-
-						if ( ! isset( $json_faces[ $name ] ) ) {
-							$json_faces[ $name ] = array( 'photos' => array() );
-							$json_faces[ $name ]['face_key'] = $face->getKey();
-						}
-
-						$json_faces[ $name ]['photos'][$photo_idx] = $face->getCoordinates();
-					}
-				}
-				else {
-					file_put_contents('php://stderr', "Couldn't find face #" . $face->getKey() . " for photo " . $photo->getCaption() . " (" . $photo->getDateTimeGMT()->format( "F j, Y" ) . ")\n" );
-				}
-			}
-	*/
-
-	$tmp = explode( ".", $photo_path );
-	$photo_extension = array_pop( $tmp );
-
-	$photo_filename = preg_replace( '/[^a-zA-Z0-9 \(\)\.,\-]/', '', $photo_filename );
-
-	$photo_filename .= "." . $photo_extension;
-
-	$utcPhotoTimestamp = $timestamp - $timezone_offset; // Mac OS expects this to be in UTC
-
-	$event_folder = $cli_options['output-dir'] . $event_key . "/";
-	$folders[] = $event_folder;
-
-	$thumb_folder = $cli_options['output-dir'] . str_replace( $cli_options['output-dir'], "thumbnails/", $event_folder );
-
-	if ( ! is_dir( $event_folder ) ) {
-		mkdir( $event_folder );
-	}
-
-	if ( ! is_dir( $thumb_folder ) ) {
-		mkdir( $thumb_folder );
-	}
-
-	if ( ! file_exists( $event_folder . $photo_filename ) ) {
-		copy( $photo_path, $event_folder . $photo_filename );
-
-		if ( isset( $cli_options['jpegrescan'] ) ) {
-			shell_exec( "jpegrescan " . escapeshellarg( $event_folder . $photo_filename ) . " " . escapeshellarg( $event_folder . $photo_filename ) . " > /dev/null 2>&1" );
-		}
-
-		shell_exec( "touch -mt " . escapeshellarg( date( "YmdHi.s", $utcPhotoTimestamp ) ) . " " . escapeshellarg( $event_folder . $photo_filename ) . " > /dev/null 2>&1" );
-	}
-
-	if ( ! file_exists( $thumb_folder . "thumb_" . $photo_filename ) ) {
-		shell_exec( "sips -Z 300 " . escapeshellarg( $event_folder . $photo_filename ) . " --out " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " 2> /dev/null" );
-
-		if ( isset( $cli_options['jpegrescan'] ) ) {
-			shell_exec( "jpegrescan " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " > /dev/null 2>&1"  );
-		}
-
-		shell_exec( "touch -mt " . escapeshellarg( date( "YmdHi.s", $utcPhotoTimestamp ) ) . " " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " > /dev/null 2>&1" );
-	}
-
-	$json_photos[ $photo_idx ] = array(
-		'id' => $photo_idx,
-		'path' => str_replace( $cli_options['output-dir'], '', $event_folder . $photo_filename ),
-		'thumb_path' => str_replace( $cli_options['output-dir'], '', $thumb_folder . "thumb_" . $photo_filename ),
-		'event_id' => $event_key,
-		'title' => $title,
-		'description' => $title/* . "\n\n" . trim( $photo->getDescription() )*/,
-		'faces' => $face_names,
-		'date' => date( "Y-m-d", $timestamp ),
-		'dateFriendly' => date( "F j, Y g:i A", $timestamp )
-	);
-
-	$json_events[ $event_key ]['photos'][] = $photo_idx;
-}
 
 function write_json_object_without_using_so_much_memory( $path, $obj ) {
 	foreach ( $obj as $idx => $member ) {
