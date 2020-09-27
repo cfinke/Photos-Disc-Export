@@ -283,7 +283,7 @@ foreach ( $cli_options['library'] as $library ) {
 
 		$faces_in_this_photo_statement->close();
 
-		$face_names = array_unique( $face_names );
+		$face_names = array_values( array_unique( $face_names ) ); // array_values prevents it from being JSON encoded as an object
 
 		$tmp = explode( ".", $photo_path );
 		$photo_extension = array_pop( $tmp );
