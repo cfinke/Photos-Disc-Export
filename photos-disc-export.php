@@ -235,12 +235,31 @@ foreach ( $cli_options['library'] as $library ) {
 
 		$title = '';
 
-		// @todo Figure out what the title/caption/description of the photo is in Photos.
-		/*
+		$attributes_statement = $db->prepare( "SELECT * FROM ZADDITIONALASSETATTRIBUTES WHERE Z_PK=:asset_id" );
+		$attributes_statement->bindValue( ':asset_id', $row['Z_PK'] );
+		$attributes_result = $attributes_statement->execute();
+
+		if ( $attributes_row = $attributes_result->fetchArray( SQLITE3_ASSOC ) ) {
+			if ( $attributes_row['ZTITLE'] ) {
+				$title = $attributes_row['ZTITLE'];
+			}
+		} 
+
 		if ( $title ) {
 			$photo_filename .= " - " . str_replace( "/", "-", $title );
 		}
-		*/
+
+		$description = '';
+
+		$description_statement = $db->prepare( "SELECT * FROM ZASSETDESCRIPTION WHERE ZASSETATTRIBUTES=:asset_id" );
+		$description_statement->bindValue( ':asset_id', $row['Z_PK'] );
+		$description_result = $description_statement->execute();
+
+		if ( $description_row = $description_result->fetchArray( SQLITE3_ASSOC ) ) {
+			if ( $description_row['ZLONGDESCRIPTION'] ) {
+				$description = $description_row['ZLONGDESCRIPTION'];
+			}
+		} 
 
 		// Find faces.
 		$face_names = array();
@@ -333,7 +352,7 @@ foreach ( $cli_options['library'] as $library ) {
 			'thumb_path' => str_replace( $cli_options['output-dir'], '', $thumb_folder . "thumb_" . $photo_filename ),
 			'event_id' => $event_key,
 			'title' => $title,
-			'description' => $title/* . "\n\n" . trim( $photo->getDescription() )*/,
+			'description' => trim( $title . "\n\n" . $description ),
 			'faces' => $face_names,
 			'date' => date( "Y-m-d", $timestamp ),
 			'dateFriendly' => date( "F j, Y g:i A", $timestamp ),
