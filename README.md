@@ -12,7 +12,10 @@ Usage
 
 Run it like this:
 
-`$ ./photos-disc-export.php --library=/path/to/photo/library --output-dir=/path/for/exported/files [--jpegrescan --start-date=1950-01-01]`
+`$ ./photos-disc-export.php \
+	--library=/path/to/photo/library \
+	--output-dir=/path/for/exported/files \
+	[--jpegrescan --start-date=1950-01-01]`
 
 You may need to `chmod +x photos-disc-export.php` first.
 
@@ -25,7 +28,11 @@ Optional arguments:
 
 You may specify multiple `--library` arguments to export photos from multiple libraries:
 
-`$ ./photos-disc-export.php --library=/path/to/photo/library --library=/path/to/photo/library2 --output-dir=/path/for/exported/files [--jpegrescan --start-date=1950-01-01 --end-date=1955-01-01]`
+`$ ./photos-disc-export.php \
+	--library=/path/to/photo/library \
+	--library=/path/to/photo/library2 \
+	--output-dir=/path/for/exported/files \
+	[--jpegrescan --start-date=1950-01-01 --end-date=1955-01-01]`
 
 The Website
 ===========
