@@ -16,7 +16,10 @@ Run it like this:
 $ ./photos-disc-export.php \
 	--library=/path/to/photo/library \
 	--output-dir=/path/for/exported/files \
-	[--jpegrescan --start-date=1950-01-01]
+	[--jpegrescan] \
+	[--start-date=1950-01-01] \
+	[--end-date=1980-01-01] \
+	[--timezone="America/Los_Angeles"]
 ```
 
 You may need to `chmod +x photos-disc-export.php` first.
@@ -35,7 +38,10 @@ $ ./photos-disc-export.php \
 	--library=/path/to/photo/library \
 	--library=/path/to/photo/library2 \
 	--output-dir=/path/for/exported/files \
-	[--jpegrescan --start-date=1950-01-01 --end-date=1955-01-01]
+	[--jpegrescan] \
+	[--start-date=1950-01-01] \
+	[--end-date=1980-01-01] \
+	[--timezone="America/Los_Angeles"]
 ```
 
 The Website
