@@ -11,7 +11,18 @@
 		<link rel="stylesheet" href="inc/style-photodisc.css" type="text/css" media="all">
 		<script type="text/javascript" src="inc/data.js"></script>
 		<script type="text/javascript" src="inc/jquery.js"></script>
-		<script type="text/html" id="thumbnail-template">
+		<script type="text/html" id="photo-thumbnail-template">
+			<li class="post type-post status-publish format-standard has-post-thumbnail hentry">
+				<div class="gallery-tile lazy">
+					<a class="dimmer" href="#">
+						<h1 class="post-title"></h1>
+					</a>
+					<div class="gallery-tile-padder landscape"></div>
+				</div>
+				<p class="post-meta"></p>
+			</li>
+		</script>
+		<script type="text/html" id="video-thumbnail-template">
 			<li class="post type-post status-publish format-standard has-post-thumbnail hentry">
 				<div class="gallery-tile lazy">
 					<a class="dimmer" href="#">
@@ -25,6 +36,11 @@
 		<script type="text/html" id="photo-template">
 			<article style="display: inline-block;" class="post type-post status-publish format-standard has-post-thumbnail hentry portfolio-post processed">
 				<a href="#"><img class="featured-image" src="about:blank"></a>
+			</article>
+		</script>
+		<script type="text/html" id="video-template">
+			<article style="display: inline-block;" class="post type-post status-publish format-standard has-post-thumbnail hentry portfolio-post processed">
+				<a href="#"><video class="featured-image" src="about:blank" controls /></a>
 			</article>
 		</script>
 		<script type="text/html" id="face-in-this-photo-template">
@@ -299,20 +315,38 @@
 			}
 			
 			function generate_thumbnail( photo, link, title, meta ) {
-				var template = $( $( '#thumbnail-template' ).html() );
-				
-				template.find( '.gallery-tile' ).attr( 'data-original', 'photos/' + photo.thumb_path );
-				template.find( 'a' ).attr( 'href', link );
-				template.find( '.post-title' ).text( title );
-				template.find( '.post-meta' ).text( meta );
-				
+				if ( photo.type === 'video' ) {
+					var template = $( $( '#video-thumbnail-template' ).html() );
+					
+					template.find( '.gallery-tile' ).attr( 'data-original', 'photos/' + photo.path );
+					template.find( 'a' ).attr( 'href', link );
+					template.find( '.post-title' ).text( title );
+					template.find( '.post-meta' ).text( meta );
+				}				
+				else {
+					var template = $( $( '#photo-thumbnail-template' ).html() );
+					
+					template.find( '.gallery-tile' ).attr( 'data-original', 'photos/' + photo.thumb_path );
+					template.find( 'a' ).attr( 'href', link );
+					template.find( '.post-title' ).text( title );
+					template.find( '.post-meta' ).text( meta );
+				}
+
 				return template;
 			}
 			
 			function generate_photo( photo ) {
-				var template = $( $( '#photo-template' ).html() );
-				template.find( 'img' ).attr( 'src', 'photos/' + photo.path );
-				template.find( 'a' ).attr( 'href', 'photos/' + photo.path );
+				if ( 'video' === photo.type ) {
+					var template = $( $( '#video-template' ).html() );
+					template.find( 'video' ).attr( 'src', 'photos/' + photo.path );
+					template.find( 'a' ).attr( 'href', 'photos/' + photo.path );
+				}
+				else {
+					var template = $( $( '#photo-template' ).html() );
+					template.find( 'img' ).attr( 'src', 'photos/' + photo.path );
+					template.find( 'a' ).attr( 'href', 'photos/' + photo.path );
+				}
+
 				return template;
 			}
 			

@@ -169,6 +169,12 @@ foreach ( $cli_options['library'] as $library ) {
 	while ( $row = $photos->fetchArray( SQLITE3_ASSOC ) ) {
 		// @todo What does ZADJUSTMENTTIMESTAMP do?
 
+		$file_type = 'photo';
+
+		if ( $row['ZKIND'] == '1' ) {
+			$file_type = 'video';
+		}
+
 		$subdirectory = $row['ZDIRECTORY'];
 		$filename = $row['ZFILENAME'];
 
@@ -226,7 +232,7 @@ foreach ( $cli_options['library'] as $library ) {
 
 		// 3 here should be strlen( number of photos in this event )
 		$photo_filename = $photo_date . ' - ' . str_pad( $idx, 3, '0', STR_PAD_LEFT );
-		
+
 		$title = '';
 
 		// @todo Figure out what the title/caption/description of the photo is in Photos.
@@ -304,14 +310,14 @@ foreach ( $cli_options['library'] as $library ) {
 		if ( ! file_exists( $event_folder . $photo_filename ) ) {
 			copy( $photo_path, $event_folder . $photo_filename );
 
-			if ( isset( $cli_options['jpegrescan'] ) ) {
+			if ( 'photo' === $file_type && isset( $cli_options['jpegrescan'] ) ) {
 				shell_exec( "jpegrescan " . escapeshellarg( $event_folder . $photo_filename ) . " " . escapeshellarg( $event_folder . $photo_filename ) . " > /dev/null 2>&1" );
 			}
 
 			shell_exec( "touch -mt " . escapeshellarg( date( "YmdHi.s", $utcPhotoTimestamp ) ) . " " . escapeshellarg( $event_folder . $photo_filename ) . " > /dev/null 2>&1" );
 		}
 
-		if ( ! file_exists( $thumb_folder . "thumb_" . $photo_filename ) ) {
+		if ( 'photo' === $file_type && ! file_exists( $thumb_folder . "thumb_" . $photo_filename ) ) {
 			shell_exec( "sips -Z 300 " . escapeshellarg( $event_folder . $photo_filename ) . " --out " . escapeshellarg( $thumb_folder . "thumb_" . $photo_filename ) . " 2> /dev/null" );
 
 			if ( isset( $cli_options['jpegrescan'] ) ) {
@@ -330,7 +336,8 @@ foreach ( $cli_options['library'] as $library ) {
 			'description' => $title/* . "\n\n" . trim( $photo->getDescription() )*/,
 			'faces' => $face_names,
 			'date' => date( "Y-m-d", $timestamp ),
-			'dateFriendly' => date( "F j, Y g:i A", $timestamp )
+			'dateFriendly' => date( "F j, Y g:i A", $timestamp ),
+			'type' => $file_type,
 		);
 
 		$json_events[ $event_key ]['photos'][] = $photo_idx;
