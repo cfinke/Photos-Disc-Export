@@ -164,7 +164,12 @@ foreach ( $cli_options['library'] as $library ) {
 
 	$db = new SQLite3( $db_file_path, SQLITE3_OPEN_READONLY );
 
-	$photos = $db->query( "SELECT * FROM ZGENERICASSET" );
+	$photos = @$db->query( "SELECT * FROM ZGENERICASSET" );
+
+	if ( ! $photos ) {
+		// As of Big Sur, the ZGENERICASSET table is called ZASSET.
+		$photos = $db->query( "SELECT * FROM ZASSET" );
+	}
 
 	while ( $row = $photos->fetchArray( SQLITE3_ASSOC ) ) {
 		// @todo What does ZADJUSTMENTTIMESTAMP do?
