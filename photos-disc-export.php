@@ -10,7 +10,7 @@ define( 'MAC_TIMESTAMP_EPOCH', 978307200 );
 /*
  * Parse the command line options, set reasonable defaults, and validate them.
  */
-$cli_options = getopt( "l::o::js:e:ut:", array( 'library::', 'output-dir::', 'jpegrescan', 'start_date:', 'end_date:', 'update_site', 'timezone:' ) );
+$cli_options = getopt( "l:o:js:e:ut:", array( 'library:', 'output-dir:', 'jpegrescan', 'start_date:', 'end_date:', 'update_site', 'timezone:' ) );
 
 if ( isset( $cli_options['l'] ) ) {
 	$cli_options['library'] = $cli_options['l'];
