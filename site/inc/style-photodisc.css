@@ -8,7 +8,7 @@
 	margin-top: 10px;
 }
 
-#faces-list-container  {
+#faces-list-container, #keywords-list-container  {
 	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 	margin-bottom: 20px;
 	padding-bottom: 20px;
@@ -44,7 +44,7 @@ body.events .toggler.show-events {
 	display: block;
 }
 
-#faces-list-container {
+#faces-list-container, #keywords-list-container {
 	clear: left;
 }
 

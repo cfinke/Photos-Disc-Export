@@ -46,6 +46,9 @@
 		<script type="text/html" id="face-in-this-photo-template">
 			<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-home"><a href="#"></a></li>
 		</script>
+		<script type="text/html" id="keyword-in-this-photo-template">
+			<li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-home"><a href="#"></a></li>
+		</script>
 	</head>
 	<body class="page page-template page-template-portfolio-php custom-background">
 		<div id="page">
@@ -68,6 +71,12 @@
 						<div>
 							<span>People in this photo:</span>
 							<ul id="faces-list" class="menu"></ul>
+						</div>
+					</nav>
+					<nav class="primary-navigation expanded" id="keywords-list-container">
+						<div>
+							<span>Keywords:</span>
+							<ul id="keywords-list" class="menu"></ul>
 						</div>
 					</nav>
 					<nav class="primary-navigation expanded toggler show-events" id="all-faces-list-container">
@@ -218,6 +227,16 @@
 					$( '#faces-list-container' ).show();
 				}
 				
+				var keywords = photo.keywords;
+				
+				if ( keywords.length > 0 ) {
+					for ( var i = 0; i < keywords.length; i++ ) {
+						$( '#keywords-list' ).append( generate_keyword( keywords[i] ) );
+					}
+					
+					$( '#keywords-list-container' ).show();
+				}
+				
 				$( '.view-date' ).attr( 'href', '#!/search/' + photo.date );
 				$( '.view-set' ).attr( 'href', '#!/event/' + photo.event_id );
 				$( '.view-full' ).attr( 'href', 'photos/' + photo.path );
@@ -364,6 +383,17 @@
 
 				return template;
 			}
+			
+			function generate_keyword( keyword ) {
+				var template = $( $( '#keyword-in-this-photo-template' ).html() );
+				var templateLink = template.find( 'a' );
+
+				templateLink
+					.text( keyword )
+					.attr( 'href', '#!/search/' + encodeURIComponent( '"' + keyword + '"' ) );
+
+				return template;
+			}
 
 			function drawFaceBox( coordinates ) {
 				var image = $( 'img.featured-image' );
@@ -410,7 +440,9 @@
 					$( '#thumbnail-container' ).html( '' );
 					$( '#permalinks' ).html( '' );
 					$( '#faces-list' ).html( '' );
+					$( '#keywords-list' ).html( '' );
 					$( '#faces-list-container' ).hide();
+					$( '#keywords-list-container' ).hide();
 					$( 'input.search-field' ).val( '' );
 					$( '.face-box' ).remove();
 					
