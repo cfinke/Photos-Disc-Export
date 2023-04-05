@@ -192,10 +192,10 @@ foreach ( $cli_options['library'] as $library ) {
 
 			// If there's a date in the EXIF data, use that.
 			$exif = @exif_read_data( $photo_path, "EXIF" );
-			
+
 			if ( $exif && isset( $exif['DateTimeOriginal'] ) ) {
 				$localPhotoTimestamp = strtotime( $exif['DateTimeOriginal'] );
-				
+
 				if ( false !== $localPhotoTimestamp && $localPhotoTimestamp <= time() ) {
 					$photo_date_created = $localPhotoTimestamp;
 				}
@@ -313,6 +313,29 @@ foreach ( $cli_options['library'] as $library ) {
 
 		$face_names = array_values( array_unique( $face_names ) ); // array_values prevents it from being JSON encoded as an object
 
+		// Find keywords
+		$keywords = array();
+
+		$keywords_for_this_photo_statement = $db->prepare( "SELECT * FROM Z_1KEYWORDS WHERE Z_1ASSETATTRIBUTES=:asset_id" );
+		$keywords_for_this_photo_statement->bindValue( ':asset_id', $row['ZADDITIONALATTRIBUTES'] );
+		$keywords_for_this_photo = $keywords_for_this_photo_statement->execute();
+
+		while ( $keyword_row = $keywords_for_this_photo->fetchArray( SQLITE3_ASSOC ) ) {
+			$keyword_statement = $db->prepare( "SELECT * FROM ZKEYWORD WHERE Z_PK=:keyword_id" );
+			$keyword_statement->bindValue( ':keyword_id', $keyword_row['Z_40KEYWORDS'] );
+			$keyword_result = $keyword_statement->execute();
+
+			$keyword = '';
+
+			while ( $keyword_row = $keyword_result->fetchArray( SQLITE3_ASSOC ) ) {
+				$keywords[] = $keyword_row['ZTITLE'];
+			}
+
+			$keyword_statement->close();
+		}
+
+		$keywords_for_this_photo_statement->close();
+
 		$tmp = explode( ".", $photo_path );
 		$photo_extension = array_pop( $tmp );
 
@@ -366,6 +389,16 @@ foreach ( $cli_options['library'] as $library ) {
 			'date' => date( "Y-m-d", $timestamp ),
 			'dateFriendly' => date( "F j, Y g:i A", $timestamp ),
 			'type' => $file_type,
+			'keywords' => $keywords,
+			//'PK' => $row['Z_PK'],
+			//'THUMBNAILINDEX' => $row['ZTHUMBNAILINDEX'],
+			//'ADDITIONALATTRIBUTES' => $row['ZADDITIONALATTRIBUTES'],
+			//'COMPUTEDATTRIBUTES' => $row['ZCOMPUTEDATTRIBUTES'],
+			//'EXTENDEDATTRIBUTES' => $row['ZEXTENDEDATTRIBUTES'],
+			//'FILENAME' => $row['ZFILENAME'],
+
+			// ZLATITUDE
+			// ZLONGITUDE
 		);
 
 		$json_events[ $event_key ]['photos'][] = $photo_idx;
