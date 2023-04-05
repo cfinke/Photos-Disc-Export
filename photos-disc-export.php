@@ -240,31 +240,35 @@ foreach ( $cli_options['library'] as $library ) {
 
 		$title = '';
 
-		$attributes_statement = $db->prepare( "SELECT * FROM ZADDITIONALASSETATTRIBUTES WHERE Z_PK=:asset_id" );
-		$attributes_statement->bindValue( ':asset_id', $row['Z_PK'] );
-		$attributes_result = $attributes_statement->execute();
+		if ( $row['ZADDITIONALATTRIBUTES'] ) {
+			$attributes_statement = $db->prepare( "SELECT * FROM ZADDITIONALASSETATTRIBUTES WHERE Z_PK=:asset_id" );
+			$attributes_statement->bindValue( ':asset_id', $row['ZADDITIONALATTRIBUTES'] );
+			$attributes_result = $attributes_statement->execute();
 
-		if ( $attributes_row = $attributes_result->fetchArray( SQLITE3_ASSOC ) ) {
-			if ( $attributes_row['ZTITLE'] ) {
-				$title = $attributes_row['ZTITLE'];
+			if ( $attributes_row = $attributes_result->fetchArray( SQLITE3_ASSOC ) ) {
+				if ( $attributes_row['ZTITLE'] ) {
+					$title = $attributes_row['ZTITLE'];
+				}
 			}
-		} 
 
-		if ( $title ) {
-			$photo_filename .= " - " . str_replace( "/", "-", $title );
+			if ( $title ) {
+				$photo_filename .= " - " . str_replace( "/", "-", $title );
+			}
 		}
 
 		$description = '';
 
-		$description_statement = $db->prepare( "SELECT * FROM ZASSETDESCRIPTION WHERE ZASSETATTRIBUTES=:asset_id" );
-		$description_statement->bindValue( ':asset_id', $row['Z_PK'] );
-		$description_result = $description_statement->execute();
+		if ( $row['ZADDITIONALATTRIBUTES'] ) {
+			$description_statement = $db->prepare( "SELECT * FROM ZASSETDESCRIPTION WHERE ZASSETATTRIBUTES=:asset_id" );
+			$description_statement->bindValue( ':asset_id', $row['ZADDITIONALATTRIBUTES'] );
+			$description_result = $description_statement->execute();
 
-		if ( $description_row = $description_result->fetchArray( SQLITE3_ASSOC ) ) {
-			if ( $description_row['ZLONGDESCRIPTION'] ) {
-				$description = $description_row['ZLONGDESCRIPTION'];
+			if ( $description_row = $description_result->fetchArray( SQLITE3_ASSOC ) ) {
+				if ( $description_row['ZLONGDESCRIPTION'] ) {
+					$description = $description_row['ZLONGDESCRIPTION'];
+				}
 			}
-		} 
+		}
 
 		// Find faces.
 		$face_names = array();
